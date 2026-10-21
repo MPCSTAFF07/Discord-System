@@ -1,0 +1,6 @@
+camera_private.json
+camera_overlay.json
+.env
+.env.*
+node_modules/
+.openai/

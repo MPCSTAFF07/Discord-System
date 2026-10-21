@@ -1,0 +1,4 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {serverOrigin,previewAddress}=require('../docs/app.js');
+test('normalizes HTTPS server origins',()=>{assert.equal(serverOrigin('https://camera.example.com/'),'https://camera.example.com');});
+test('rejects insecure, credentialed and path URLs',()=>{for(const value of ['http://camera.example.com','javascript:alert(1)','https://user:pass@example.com','https://camera.example.com/path','https://camera.example.com/#token=key'])assert.throws(()=>serverOrigin(value));});
+test('preview requires same server, correct route and viewer key',()=>{assert.ok(previewAddress('https://camera.example.com/camera/view#token=key&slot=a1','https://camera.example.com'));for(const value of ['https://evil.example/camera/view#token=key','https://camera.example.com/camera#token=admin','https://camera.example.com/camera/view'])assert.throws(()=>previewAddress(value,'https://camera.example.com'));});
