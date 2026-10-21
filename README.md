@@ -1,42 +1,54 @@
-# MPC Discord Camera
+# MPC Discord Camera — Cloudflare版
 
-カメラ接続を管理するGitHub Pages用の操作画面です。選手の送信リンク発行・接続一覧・Discord ID設定・リンク再発行は、既存のカメラサーバーの管理画面をサイト内に表示して操作します。OBS URLを貼り付けて、映像を確認する機能もあります。
+参加者のカメラ送信・OBS受信をCloudflareで接続します。レンタルサーバーや独自ドメインは不要です。まだユーザーのCloudflareアカウントへの本番デプロイは行っていません。
 
-## GitHub Pagesの公開
+## 初回の設定
+
+1. Cloudflareアカウントを作る。
+2. CloudflareのRealtime → TURNでキーを作成する。Key IDとAPI Tokenを控える。
+3. Node.jsのLTS版をインストールする。
+4. このリポジトリをZIPで展開し、`DEPLOY_CLOUDFLARE.bat` を実行する。
+5. Cloudflareへ本人がログインし、管理キー（ADMIN_KEY）・TURN Key ID・TURN API Tokenを入力する。
+6. 公開時に表示された `https://mpc-discord-camera.<自分のサブドメイン>.workers.dev` がサーバーURL。自分で設定したADMIN_KEYが管理キー。
+
+詳細: [cloudflare/README_JA.md](cloudflare/README_JA.md)
+
+キーはチャットやGitHubのファイルに貼らず、BAT内で開くWranglerの入力欄へ入力してください。利用前にCloudflare側の無料枠・課金設定を確認してください。使用量によって費用が発生するため、常に無料という保証はありません。
+
+## 管理サイトをGitHub Pagesで公開
 
 Settings → Pages → Source「Deploy from a branch」→ Branch「main」・フォルダ「/docs」→ Save。
 
 公開後のURL: https://mpcstaff07.github.io/Discord-System/
 
-このURLは公開設定が完了してから使えます。非公開リポジトリでPagesが使えない契約の場合は、この画面用リポジトリを公開にするか、対応プランが必要です。VoiceONやMavaValoOverlay本体を公開する必要はありません。
+非公開リポジトリでPagesを利用できない契約の場合は、この画面用リポジトリの公開設定または対応プランが必要です。Cloudflare側のカメラ画面はworkers.devで公開されるので、GitHub Pagesを公開しなくても直接使用できます。
 
-## 接続
+## 操作
 
-1. 先に配布したカメラ連携版のサーバーを、外部から接続できるHTTPSで起動します。GitHub Pages上ではPythonサーバーは動きません。
-2. このサイトで「カメラサーバーのURL」（例 `https://camera.example.com`）と「管理キー」を入力。
-3. 管理キーはサーバー上の `camera_private.json` の `admin` 値です。Discord BotトークンやOAuthのClient Secretではありません。
-4. 管理一覧の「送信リンク」を各選手へ渡します。選手はその送信ページでカメラ確認→送信開始。
-5. 「OBS URL」をOBSブラウザソースへ貼り付けます。サイト下部の映像確認欄でも確認できます。
-6. Discord認証を使う場合は、カメラサーバーでOAuthを設定し、管理画面で選手のDiscord IDを登録します。
+1. 管理サイトへCloudflareのURLとADMIN_KEYを入力。
+2. 一覧で選手名を登録し、選手別の「送信リンク」を本人へ渡す。
+3. 参加者はカメラ確認→送信開始。マイクは取得しない。
+4. 「ブラウザで受信確認」で映像を確認。
+5. 「OBS URL」をOBSブラウザソースへ貼る。
 
-参加者・OBSはカメラサーバーへ直接接続します。GitHub Pagesは映像を中継しません。選手宅からの接続は回線によってTURNが必要です。
+GitHubの画面はCloudflareの管理画面を埋め込んで操作します。映像はGitHubを通らずWebRTCで流れ、直接接続できない場合はCloudflare TURNで中継します。
 
-## サーバー側
+## MavaValoOverlay
 
-先に配布したMavaValoOverlayカメラ連携版の `CAMERA_JA.md` を参照してください。
+公開サーバー接続対応版の「カメラ」タブへ、CloudflareのURLとADMIN_KEYを入力します。設定が保存されたらIngameブラウザソースを再読み込みします。A1～A5・B1～B5の選手枠を一致させてください。Pythonサーバー・Docker・Caddy・coturnを手元で起動する必要はありません。
 
-環境変数 `MAVA_CAMERA_PUBLIC_URL` をHTTPSの接続元に設定し、`/camera` 以下をカメラサーバー（標準17720番）へ転送します。`/camera/ws` のWebSocket Upgradeも中継します。カメラ管理画面はこのサイトからiframeで表示するため、サーバーのCSP frame-ancestorsやX-Frame-OptionsでこのGitHub Pagesからの埋め込みを拒否しない設定が必要です。埋め込めない場合は「別タブで開く」も使えます。
+## 認証と保存
 
-このリポジトリは操作画面だけです。接続サーバーの起動・HTTPS・TURN・Discord OAuthの設定や認証情報は含みません。サーバー未準備ならカメラ接続はまだ使えません。
+Cloudflare版は選手別の招待リンク方式です。Discordログインによる本人確認はまだ含みません。Bot音声とは別機能です。
 
-## 保存と解除
+ADMIN_KEYとTURNの長期API TokenはWorkers Secretsへ保存します。選手名・招待キー・閲覧キーはDurable Objectの非公開データとして保存します。コードへ秘密値を埋め込みません。ブラウザへは有効期限付きのTURN資格情報だけを発行します。
 
-管理キーは入力したタブのsessionStorageに保持します。GitHubやソースコード、localStorageには書き込みません。接続解除で消します。接続先サーバーの管理画面へはiframeのフラグメントで渡します。管理キーは信頼できるカメラサーバーだけに入力してください。
-
-「接続解除」はこのサイトから管理画面を閉じる操作です。参加者の映像送信そのものは停止しません。停止する場合は参加者の送信停止、管理画面でリンク再発行、またはカメラサーバー停止を使ってください。
+管理サイトの管理キーはタブのsessionStorageにのみ保持します。「接続解除」で消します。接続解除は管理画面を閉じる操作で、選手の送信そのものを止める操作ではありません。停止する場合は、参加者が送信停止するか、管理画面でリンクを再発行します。
 
 ## 検証
 
-`node --test tests/addresses.test.cjs`
+管理サイト: `node --test tests/addresses.test.cjs`
 
-HTTPS接続先の検証・プレビューURLの接続先制限をテストしています。実際のHTTPSカメラサーバー・実カメラ・OBSとの接続は未検証です。
+Cloudflare側: `cd cloudflare` → `npm ci` → `npm test` → `npm run check`
+
+Workersローカル実行環境で管理者認証・設定保存・WebSocketシグナリング・招待の無効化を検証します。Cloudflare本番への公開・TURN実API・実カメラ・OBSはアカウント設定後の実機確認が必要です。

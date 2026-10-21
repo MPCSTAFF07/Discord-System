@@ -4,3 +4,6 @@ camera_overlay.json
 .env.*
 node_modules/
 .openai/
+cloudflare/.wrangler/
+cloudflare/.dev.vars
+cloudflare/.env

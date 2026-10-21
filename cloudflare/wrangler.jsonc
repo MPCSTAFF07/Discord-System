@@ -1,0 +1,9 @@
+{
+  "name": "mpc-discord-camera",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-06",
+  "workers_dev": true,
+  "assets": {"directory":"./public", "binding":"ASSETS", "run_worker_first":true},
+  "durable_objects": {"bindings":[{"name":"CAMERAS","class_name":"CameraRoom"}]},
+  "migrations":[{"tag":"v1","new_sqlite_classes":["CameraRoom"]}]
+}
